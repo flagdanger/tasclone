@@ -20,12 +20,47 @@ TascloneAudioProcessor::TascloneAudioProcessor()
                        .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
                      #endif
                        )
+, _treeState(*this, nullptr, "PARAMETERS", createParameterLayout())
 #endif
 {
+    _treeState.addParameterListener(inID, this);
+    _treeState.addParameterListener(outID, this);
+    _treeState.addParameterListener(mixID, this);
+
 }
 
 TascloneAudioProcessor::~TascloneAudioProcessor()
 {
+    _treeState.removeParameterListener(inID, this);
+    _treeState.removeParameterListener(outID, this);
+    _treeState.removeParameterListener(mixID, this);
+}
+
+juce::AudioProcessorValueTreeState::ParameterLayout TascloneAudioProcessor::createParameterLayout() {
+
+    std::vector <std::unique_ptr<juce::RangedAudioParameter>> params;
+
+    auto inputParam = std::make_unique<juce::AudioParameterFloat>(inID, inName, 0.0f, 24.0f, 0.0f);
+    auto outputParam = std::make_unique<juce::AudioParameterFloat>(outID, outName, -24.0f, 24.0f, 0.0f);
+    auto mixParam = std::make_unique<juce::AudioParameterFloat>(mixID, mixName, 0.0f, 1.0f, 1.0f);
+
+    params.push_back(std::move(inputParam));
+    params.push_back(std::move(outputParam));
+    params.push_back(std::move(mixParam));
+
+    return { params.begin(), params.end() };
+}
+
+void TascloneAudioProcessor::parameterChanged(const juce::String& parameterID, float newValue) {
+
+    updateParameters();
+}
+
+void TascloneAudioProcessor::updateParameters() {
+
+    _distortionModule.setInput(_treeState.getRawParameterValue(inID)->load());
+    _distortionModule.setOutput(_treeState.getRawParameterValue(outID)->load());
+    _distortionModule.setMix(_treeState.getRawParameterValue(mixID)->load());
 }
 
 //==============================================================================
@@ -93,8 +128,14 @@ void TascloneAudioProcessor::changeProgramName (int index, const juce::String& n
 //==============================================================================
 void TascloneAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
-    // Use this method as the place to do any pre-playback
-    // initialisation that you need..
+    juce::dsp::ProcessSpec spec;
+    spec.maximumBlockSize = samplesPerBlock;
+    spec.sampleRate = sampleRate;
+    spec.numChannels = getTotalNumOutputChannels();
+
+    _distortionModule.prepare(spec);
+
+    updateParameters();
 }
 
 void TascloneAudioProcessor::releaseResources()
@@ -144,18 +185,8 @@ void TascloneAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
 
-    // This is the place where you'd normally do the guts of your plugin's
-    // audio processing...
-    // Make sure to reset the state if your inner loop is processing
-    // the samples and the outer loop is handling the channels.
-    // Alternatively, you can process the samples with the channels
-    // interleaved by keeping the same state.
-    for (int channel = 0; channel < totalNumInputChannels; ++channel)
-    {
-        auto* channelData = buffer.getWritePointer (channel);
-
-        // ..do something to the data...
-    }
+    juce::dsp::AudioBlock<float> block {buffer};
+    _distortionModule.process(juce::dsp::ProcessContextReplacing<float>(block));
 }
 
 //==============================================================================
@@ -166,7 +197,8 @@ bool TascloneAudioProcessor::hasEditor() const
 
 juce::AudioProcessorEditor* TascloneAudioProcessor::createEditor()
 {
-    return new TascloneAudioProcessorEditor (*this);
+    //return new TascloneAudioProcessorEditor (*this);
+    return new juce::GenericAudioProcessorEditor(*this);
 }
 
 //==============================================================================
@@ -183,14 +215,7 @@ void TascloneAudioProcessor::setStateInformation (const void* data, int sizeInBy
     // whose contents will have been created by the getStateInformation() call.
 }
 
-juce::AudioProcessorValueTreeState::ParameterLayout TascloneAudioProcessor::createParameterLayout() 
-{
-    juce::AudioProcessorValueTreeState::ParameterLayout layout;
-    
-    
 
-    return layout;
-}
 
 //==============================================================================
 // This creates new instances of the plugin..

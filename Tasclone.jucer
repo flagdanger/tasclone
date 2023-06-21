@@ -1,8 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <JUCERPROJECT id="WihPY3" name="Tasclone" projectType="audioplug" useAppConfig="0"
-              addUsingNamespaceToJuceHeader="0" displaySplashScreen="1" jucerFormatVersion="1">
+              addUsingNamespaceToJuceHeader="0" displaySplashScreen="1" jucerFormatVersion="1"
+              pluginVST3Category="Distortion">
   <MAINGROUP id="HtywXC" name="Tasclone">
+    <GROUP id="{660C4F09-02CF-DA64-CC08-1AAFADBF3F4F}" name="DSP">
+      <FILE id="ah8hUJ" name="distortion.cpp" compile="1" resource="0" file="Source/DSP/distortion.cpp"/>
+      <FILE id="lZjRrn" name="distortion.h" compile="0" resource="0" file="Source/DSP/distortion.h"/>
+    </GROUP>
+    <GROUP id="{E3080298-F8DD-4C01-B6BC-68CCD3DDC486}" name="Params">
+      <FILE id="DSEIEA" name="parameters.cpp" compile="1" resource="0" file="Source/Params/parameters.cpp"/>
+      <FILE id="N7eYZk" name="parameters.h" compile="0" resource="0" file="Source/Params/parameters.h"/>
+    </GROUP>
     <GROUP id="{795E4757-A7E1-7FB8-5FE9-7314FF81F46E}" name="Source">
       <FILE id="IocqKj" name="PluginProcessor.cpp" compile="1" resource="0"
             file="Source/PluginProcessor.cpp"/>
@@ -33,6 +42,7 @@
         <MODULEPATH id="juce_graphics" path="../JUCE/modules"/>
         <MODULEPATH id="juce_gui_basics" path="../JUCE/modules"/>
         <MODULEPATH id="juce_gui_extra" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_dsp" path="../JUCE/modules"/>
       </MODULEPATHS>
     </LINUX_MAKE>
     <VS2022 targetFolder="Builds/VisualStudio2022">
@@ -53,6 +63,7 @@
         <MODULEPATH id="juce_graphics" path="../JUCE/modules"/>
         <MODULEPATH id="juce_gui_basics" path="../JUCE/modules"/>
         <MODULEPATH id="juce_gui_extra" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_dsp" path="../JUCE/modules"/>
       </MODULEPATHS>
     </VS2022>
   </EXPORTFORMATS>
@@ -66,6 +77,7 @@
     <MODULE id="juce_audio_utils" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
     <MODULE id="juce_core" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
     <MODULE id="juce_data_structures" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_dsp" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
     <MODULE id="juce_events" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
     <MODULE id="juce_graphics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
     <MODULE id="juce_gui_basics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
