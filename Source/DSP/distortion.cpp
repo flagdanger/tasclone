@@ -57,27 +57,7 @@ void Distortion<SampleType>::setMix(SampleType newMix)
 template <typename SampleType>
 void Distortion<SampleType>::setModel(DistortionModel newModel)
 {
-	switch (newModel)
-	{
-		case DistortionModel::kHard:
-			_model = newModel;
-			break;
-		case DistortionModel::kSoftEx3:
-			_model = newModel;
-			break;
-
-		case DistortionModel::kSoftEx5:
-			_model = newModel;
-			break;
-
-		case DistortionModel::kSoftReciprocal:
-			_model = newModel;
-			break;
-
-		case DistortionModel::kSaturation:
-			_model = newModel;
-			break;
-	}
+	_model = newModel;
 }
 
 template class Distortion<float>;
