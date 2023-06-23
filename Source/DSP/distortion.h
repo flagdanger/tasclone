@@ -90,7 +90,7 @@ public:
 
         auto mix = (1.0 - _mix.getNextValue()) * input + wetSignal * _mix.getNextValue();
 
-        return mix * _output.getNextValue();
+        return mix + _output.getNextValue();
     }
 
     SampleType softClipEx3(SampleType input) {
