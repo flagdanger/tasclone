@@ -1,9 +1,9 @@
 /*
   ==============================================================================
 
-    distortion.h
-    Created: 20 Jun 2023 1:58:32pm
-    Author:  Flynn, Tarun
+	distortion.h
+	Created: 20 Jun 2023 1:58:32pm
+	Author:  Flynn, Tarun
 
   ==============================================================================
 */
@@ -12,128 +12,110 @@
 #include <JuceHeader.h>
 
 template <typename SampleType>
-class Distortion {
-
+class Distortion
+{
 public:
+	Distortion();
 
-    Distortion();
+	void prepare(juce::dsp::ProcessSpec &spec);
 
-    void prepare(juce::dsp::ProcessSpec &spec);
+	void reset();
 
-    void reset();
+	template <typename ProcessContext>
+	void process(const ProcessContext &context) noexcept
+	{
+		const auto &inputBlock = context.getInputBlock();
+		const auto &outputBlock = context.getOutputBlock();
+		const auto numChannels = outputBlock.getNumChannels();
+		const auto numSamples = outputBlock.getNumSamples();
 
-    template <typename ProcessContext>
-    void process(const ProcessContext& context) noexcept {
+		jassert(inputBlock.getNumChannels() == numChannels);
+		jassert(inputBlock.getNumSamples() == numSamples);
 
-        const auto& inputBlock = context.getInputBlock();
-        auto& outputBlock = context.getOutputBlock();
-        const auto numChannels = outputBlock.getNumChannels();
-        const auto numSamples = outputBlock.getNumSamples();
+		for (size_t channel = 0; channel < numChannels; ++channel)
+		{
+			auto *inputSamples = inputBlock.getChannelPointer(channel);
+			auto *outputSamples = outputBlock.getChannelPointer(channel);
 
-        jassert(inputBlock.getNumChannels() == numChannels);
-        jassert(inputBlock.getNumSamples() == numSamples);
+			for (size_t i = 0; i < numSamples; ++i)
+			{
+				outputSamples[i] = processSample(inputSamples[i]);
+			}
+		}
+	}
 
-        for (size_t channel = 0; channel < numChannels; ++channel) {
-            auto* inputSamples = inputBlock.getChannelPointer(channel);
-            auto* outputSamples = outputBlock.getChannelPointer(channel);
+	SampleType processSample(SampleType input) noexcept
+	{
+		switch (_model)
+		{
+		case DistortionModel::kHard:
+			return hardClip(input);
+		case DistortionModel::kSoftEx3:
+			return softClipEx3(input);
+		case DistortionModel::kSoftEx5:
+			return softClipEx5(input);
+		case DistortionModel::kSoftReciprocal:
+			return softClipReciprocal(input);
+		case DistortionModel::kSaturation:
+			return saturation(input);
+		}
+	}
 
-            for (size_t i = 0; i < numSamples; ++i) {
-                outputSamples[i] = processSample(inputSamples[i]);
-            }
-        }
-    }
+	SampleType hardClip(SampleType input)
+	{
+		auto wetSignal = input * _input.getNextValue();
 
-    SampleType processSample(SampleType input) noexcept {
+		if (std::abs(wetSignal) >= 1.0)
+		{
+			wetSignal = 1.0 / wetSignal;
+		}
 
-        switch (_model) {
+		auto mix = (1.0 - _mix.getNextValue()) * input + wetSignal * _mix.getNextValue();
 
-            case DistortionModel::kHard: {
+		return mix + _output.getNextValue();
+	}
 
-                return hardClip(input);
-                break;
-            }
+	SampleType softClipEx3(SampleType input)
+	{
+		return input;
+	}
 
-            case DistortionModel::kSoftEx3: {
+	SampleType softClipEx5(SampleType input)
+	{
+		return input;
+	}
 
-                return softClipEx3(input);
-                break;
-            }
+	SampleType softClipReciprocal(SampleType input)
+	{
+		return input;
+	}
 
-            case DistortionModel::kSoftEx5: {
+	SampleType saturation(SampleType input)
+	{
 
-                return softClipEx5(input);
-                break;
-            }
+		return input;
+	}
 
-            case DistortionModel::kSoftReciprocal: {
+	enum class DistortionModel {
+		kHard,
+		kSoftEx3,
+		kSoftEx5,
+		kSoftReciprocal,
+		kSaturation
+	};
 
-                return softClipReciprocal(input);
-                break;
-            }
+	void setInput(SampleType newInput);
+	void setOutput(SampleType newOutput);
+	void setMix(SampleType newMix);
 
-            case DistortionModel::kSaturation: {
-
-                return saturation(input);
-                break;
-            }
-        }
-
-    }
-
-    SampleType hardClip(SampleType input) {
-
-        auto wetSignal = input * _input.getNextValue();
-
-        if (std::abs(wetSignal) >= 1.0) {
-            wetSignal = 1.0 / wetSignal;
-        }
-
-        auto mix = (1.0 - _mix.getNextValue()) * input + wetSignal * _mix.getNextValue();
-
-        return mix + _output.getNextValue();
-    }
-
-    SampleType softClipEx3(SampleType input) {
-
-        return input;
-    }
-
-    SampleType softClipEx5(SampleType input) {
-
-        return input;
-    }
-
-    SampleType softClipReciprocal(SampleType input) {
-
-        return input;
-    }
-
-    SampleType saturation(SampleType input) {
-           
-        return input;
-    }
-
-    enum class DistortionModel {
-
-        kHard,
-        kSoftEx3,
-        kSoftEx5,
-        kSoftReciprocal,
-        kSaturation
-    };
-
-    void setInput(SampleType newInput);
-    void setOutput(SampleType newOutput);
-    void setMix(SampleType newMix);
-
-    void setModel(DistortionModel newModel);
+	void setModel(DistortionModel newModel);
 
 private:
-    juce::SmoothedValue<float> _input;
-    juce::SmoothedValue<float> _output;
-    juce::SmoothedValue<float> _mix;
+	juce::SmoothedValue<float> _input;
+	juce::SmoothedValue<float> _output;
+	juce::SmoothedValue<float> _mix;
 
-    float _sampleRate = 44100.0f;
+	float _sampleRate = 44100.0f;
 
-    DistortionModel _model = DistortionModel::kHard;
+	DistortionModel _model = DistortionModel::kHard;
 };
