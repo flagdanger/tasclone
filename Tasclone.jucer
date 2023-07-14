@@ -4,6 +4,7 @@
               addUsingNamespaceToJuceHeader="0" displaySplashScreen="1" jucerFormatVersion="1"
               pluginVST3Category="Distortion">
   <MAINGROUP id="HtywXC" name="Tasclone">
+    <GROUP id="{4FA41529-0249-263D-8FDD-160ADEB648DA}" name="Components"/>
     <GROUP id="{660C4F09-02CF-DA64-CC08-1AAFADBF3F4F}" name="DSP">
       <FILE id="ah8hUJ" name="distortion.cpp" compile="1" resource="0" file="Source/DSP/distortion.cpp"/>
       <FILE id="lZjRrn" name="distortion.h" compile="0" resource="0" file="Source/DSP/distortion.h"/>
