@@ -1,9 +1,9 @@
 /*
   ==============================================================================
 
-    distortion.h
-    Created: 20 Jun 2023 1:58:32pm
-    Author:  Flynn, Tarun
+	distortion.h
+	Created: 20 Jun 2023 1:58:32pm
+	Author:  Flynn, Tarun
 
   ==============================================================================
 */
@@ -12,36 +12,37 @@
 #include <JuceHeader.h>
 
 template <typename SampleType>
-class Distortion {
-
+class Distortion
+{
 public:
+	Distortion();
 
-    Distortion();
+	void prepare(juce::dsp::ProcessSpec &spec);
 
-    void prepare(juce::dsp::ProcessSpec &spec);
+	void reset();
 
-    void reset();
+	template <typename ProcessContext>
+	void process(const ProcessContext &context) noexcept
+	{
+		const auto &inputBlock = context.getInputBlock();
+		const auto &outputBlock = context.getOutputBlock();
+		const auto numChannels = outputBlock.getNumChannels();
+		const auto numSamples = outputBlock.getNumSamples();
 
-    template <typename ProcessContext>
-    void process(const ProcessContext& context) noexcept {
+		jassert(inputBlock.getNumChannels() == numChannels);
+		jassert(inputBlock.getNumSamples() == numSamples);
 
-        const auto& inputBlock = context.getInputBlock();
-        auto& outputBlock = context.getOutputBlock();
-        const auto numChannels = outputBlock.getNumChannels();
-        const auto numSamples = outputBlock.getNumSamples();
+		for (size_t channel = 0; channel < numChannels; ++channel)
+		{
+			auto *inputSamples = inputBlock.getChannelPointer(channel);
+			auto *outputSamples = outputBlock.getChannelPointer(channel);
 
-        jassert(inputBlock.getNumChannels() == numChannels);
-        jassert(inputBlock.getNumSamples() == numSamples);
-
-        for (size_t channel = 0; channel < numChannels; ++channel) {
-            auto* inputSamples = inputBlock.getChannelPointer(channel);
-            auto* outputSamples = outputBlock.getChannelPointer(channel);
-
-            for (size_t i = 0; i < numSamples; ++i) {
-                outputSamples[i] = processSample(inputSamples[i]);
-            }
-        }
-    }
+			for (size_t i = 0; i < numSamples; ++i)
+			{
+				outputSamples[i] = processSample(inputSamples[i]);
+			}
+		}
+	}
 
     SampleType processSample(SampleType input) noexcept {
 
@@ -86,15 +87,15 @@ public:
 
     }
 
-    SampleType hardClip(SampleType input) {
-
-        auto wetSignal = input * _input.getNextValue();
+	SampleType hardClip(SampleType input)
+	{
+		auto wetSignal = input * _input.getNextValue();
 
         if (std::abs(wetSignal) >= 1.0) {
             wetSignal = std::abs(wetSignal) / wetSignal;
         }
 
-        auto mix = (1.0 - _mix.getNextValue()) * input + wetSignal * _mix.getNextValue();
+		auto mix = (1.0 - _mix.getNextValue()) * input + wetSignal * _mix.getNextValue();
 
         return mix * _output.getNextValue();
     }
@@ -133,15 +134,16 @@ public:
         return input;
     }
 
-    SampleType softClipReciprocal(SampleType input) {
+	SampleType softClipReciprocal(SampleType input)
+	{
+		return input;
+	}
 
-        return input;
-    }
+	SampleType saturation(SampleType input)
+	{
 
-    SampleType saturation(SampleType input) {
-           
-        return input;
-    }
+		return input;
+	}
 
     enum class DistortionModel {
 
@@ -153,18 +155,18 @@ public:
         kSaturation
     };
 
-    void setInput(SampleType newInput);
-    void setOutput(SampleType newOutput);
-    void setMix(SampleType newMix);
+	void setInput(SampleType newInput);
+	void setOutput(SampleType newOutput);
+	void setMix(SampleType newMix);
 
-    void setModel(DistortionModel newModel);
+	void setModel(DistortionModel newModel);
 
 private:
-    juce::SmoothedValue<float> _input;
-    juce::SmoothedValue<float> _output;
-    juce::SmoothedValue<float> _mix;
+	juce::SmoothedValue<float> _input;
+	juce::SmoothedValue<float> _output;
+	juce::SmoothedValue<float> _mix;
 
-    float _sampleRate = 44100.0f;
+	float _sampleRate = 44100.0f;
 
     //default distortion model
     DistortionModel _model = DistortionModel::kSoftEx3;
