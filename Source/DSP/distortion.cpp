@@ -65,6 +65,12 @@ void Distortion<SampleType>::setModel(DistortionModel newModel) {
             break;
         }
 
+        case DistortionModel::doubleSoft: {
+
+            _model = newModel;
+            break;
+        }
+
         case DistortionModel::kSoftEx3: {
 
             _model = newModel;

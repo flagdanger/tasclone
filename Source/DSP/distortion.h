@@ -53,6 +53,12 @@ public:
                 break;
             }
 
+            case DistortionModel::doubleSoft: {
+
+                return doubleSoft(input);
+                break;
+            }
+
             case DistortionModel::kSoftEx3: {
 
                 return softClipEx3(input);
@@ -85,20 +91,44 @@ public:
         auto wetSignal = input * _input.getNextValue();
 
         if (std::abs(wetSignal) >= 1.0) {
-            wetSignal = 1.0 / wetSignal;
+            wetSignal = std::abs(wetSignal) / wetSignal;
         }
 
         auto mix = (1.0 - _mix.getNextValue()) * input + wetSignal * _mix.getNextValue();
 
-        return mix + _output.getNextValue();
+        return mix * _output.getNextValue();
     }
 
-    SampleType softClipEx3(SampleType input) {
-
+    //algorithm from: 
+    //https://jatinchowdhury18.medium.com/complex-nonlinearities-epsiode-2-harmonic-exciter-cd883d888a43
+    SampleType doubleSoft(SampleType input) {
         return input;
     }
 
+
+
+    SampleType softClipEx3(SampleType input) {
+        auto wetSignal = input * _input.getNextValue();
+
+        if (wetSignal >= 1.0) {
+            //wetSignal = std::abs(wetSignal) / wetSignal;
+            wetSignal = std::abs(wetSignal) / wetSignal -.21;
+        } 
+        else if (wetSignal <= -1.0){
+            wetSignal = std::abs(wetSignal) / wetSignal + .21; 
+        }
+        else {
+            wetSignal = wetSignal * (.9 - pow(std::abs((3.0 * wetSignal) / 2 - std::abs(wetSignal)), 2.25));
+        }
+
+        auto mix = (1.0 - _mix.getNextValue()) * input + wetSignal * _mix.getNextValue();
+
+        return mix * _output.getNextValue();
+        
+    }
+
     SampleType softClipEx5(SampleType input) {
+
 
         return input;
     }
@@ -116,6 +146,7 @@ public:
     enum class DistortionModel {
 
         kHard,
+        doubleSoft,
         kSoftEx3,
         kSoftEx5,
         kSoftReciprocal,
@@ -135,5 +166,6 @@ private:
 
     float _sampleRate = 44100.0f;
 
-    DistortionModel _model = DistortionModel::kHard;
+    //default distortion model
+    DistortionModel _model = DistortionModel::kSoftEx3;
 };

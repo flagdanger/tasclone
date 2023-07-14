@@ -40,8 +40,8 @@ juce::AudioProcessorValueTreeState::ParameterLayout TascloneAudioProcessor::crea
 
     std::vector <std::unique_ptr<juce::RangedAudioParameter>> params;
 
-    auto inputParam = std::make_unique<juce::AudioParameterFloat>(inID, inName, 0.0f, 24.0f, 0.0f);
-    auto outputParam = std::make_unique<juce::AudioParameterFloat>(outID, outName, -24.0f, 24.0f, 0.0f);
+    auto inputParam = std::make_unique<juce::AudioParameterFloat>(inID, inName, 1.0f, 2.0f, 1.0f);
+    auto outputParam = std::make_unique<juce::AudioParameterFloat>(outID, outName, 0.0f, 2.0f, 1.0f);
     auto mixParam = std::make_unique<juce::AudioParameterFloat>(mixID, mixName, 0.0f, 1.0f, 1.0f);
 
     params.push_back(std::move(inputParam));
