@@ -9,11 +9,13 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include "DSP/distortion.h"
+#include "Params/parameters.h"
 
 //==============================================================================
 /**
 */
-class TascloneAudioProcessor  : public juce::AudioProcessor
+class TascloneAudioProcessor  : public juce::AudioProcessor, juce::AudioProcessorValueTreeState::Listener
                             #if JucePlugin_Enable_ARA
                              , public juce::AudioProcessorARAExtension
                             #endif
@@ -56,12 +58,16 @@ public:
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 
-    static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
+    
 
-    juce::AudioProcessorValueTreeState apvts {*this, nullptr,
-        "Parameters", createParameterLayout() };
+    juce::AudioProcessorValueTreeState _treeState;
 
 private:
+    juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
+    void parameterChanged(const juce::String& parameterID, float newValue) override;
+    void updateParameters();
+
+    Distortion<float> _distortionModule;
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TascloneAudioProcessor)
 };
