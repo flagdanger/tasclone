@@ -4,7 +4,6 @@
               addUsingNamespaceToJuceHeader="0" displaySplashScreen="1" jucerFormatVersion="1"
               pluginVST3Category="Distortion">
   <MAINGROUP id="HtywXC" name="Tasclone">
-    <GROUP id="{4FA41529-0249-263D-8FDD-160ADEB648DA}" name="Components"/>
     <GROUP id="{660C4F09-02CF-DA64-CC08-1AAFADBF3F4F}" name="DSP">
       <FILE id="ah8hUJ" name="distortion.cpp" compile="1" resource="0" file="Source/DSP/distortion.cpp"/>
       <FILE id="lZjRrn" name="distortion.h" compile="0" resource="0" file="Source/DSP/distortion.h"/>
@@ -12,6 +11,10 @@
     <GROUP id="{E3080298-F8DD-4C01-B6BC-68CCD3DDC486}" name="Params">
       <FILE id="DSEIEA" name="parameters.cpp" compile="1" resource="0" file="Source/Params/parameters.cpp"/>
       <FILE id="N7eYZk" name="parameters.h" compile="0" resource="0" file="Source/Params/parameters.h"/>
+    </GROUP>
+    <GROUP id="{E8544BAA-FCB3-CE2C-B9A9-B7CCFF5B1696}" name="Source">
+      <GROUP id="{79DD1823-A936-0F6D-D30C-BFE3268D3E74}" name="DSP"/>
+      <GROUP id="{D987D5E5-CE3C-1A73-2918-3AC19A115466}" name="Params"/>
     </GROUP>
     <GROUP id="{795E4757-A7E1-7FB8-5FE9-7314FF81F46E}" name="Source">
       <FILE id="IocqKj" name="PluginProcessor.cpp" compile="1" resource="0"
