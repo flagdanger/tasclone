@@ -54,11 +54,14 @@ void Distortion<SampleType>::setMix(SampleType newMix)
 	_mix.setTargetValue(newMix);
 }
 
+/*
 template <typename SampleType>
 void Distortion<SampleType>::setModel(DistortionModel newModel)
 {
 	_model = newModel;
 }
+*/
+
 
 template <typename SampleType>
 void Distortion<SampleType>::setModel(DistortionModel newModel) {
