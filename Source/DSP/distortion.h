@@ -44,95 +44,105 @@ public:
 		}
 	}
 
-    SampleType processSample(SampleType input) noexcept {
+	SampleType processSample(SampleType input) noexcept
+	{
 
-        switch (_model) {
+		switch (_model)
+		{
 
-            case DistortionModel::kHard: {
+		case DistortionModel::kHard:
+		{
 
-                return hardClip(input);
-                break;
-            }
+			return hardClip(input);
+			break;
+		}
 
-            case DistortionModel::doubleSoft: {
+		case DistortionModel::doubleSoft:
+		{
 
-                return doubleSoft(input);
-                break;
-            }
+			return doubleSoft(input);
+			break;
+		}
 
-            case DistortionModel::kSoftEx3: {
+		case DistortionModel::kSoftEx3:
+		{
 
-                return softClipEx3(input);
-                break;
-            }
+			return softClipEx3(input);
+			break;
+		}
 
-            case DistortionModel::kSoftEx5: {
+		case DistortionModel::kSoftEx5:
+		{
 
-                return softClipEx5(input);
-                break;
-            }
+			return softClipEx5(input);
+			break;
+		}
 
-            case DistortionModel::kSoftReciprocal: {
+		case DistortionModel::kSoftReciprocal:
+		{
 
-                return softClipReciprocal(input);
-                break;
-            }
+			return softClipReciprocal(input);
+			break;
+		}
 
-            case DistortionModel::kSaturation: {
+		case DistortionModel::kSaturation:
+		{
 
-                return saturation(input);
-                break;
-            }
-        }
-
-    }
+			return saturation(input);
+			break;
+		}
+		}
+	}
 
 	SampleType hardClip(SampleType input)
 	{
 		auto wetSignal = input * _input.getNextValue();
 
-        if (std::abs(wetSignal) >= 1.0) {
-            wetSignal = std::abs(wetSignal) / wetSignal;
-        }
+		if (std::abs(wetSignal) >= 1.0)
+		{
+			wetSignal = std::abs(wetSignal) / wetSignal;
+		}
 
 		auto mix = (1.0 - _mix.getNextValue()) * input + wetSignal * _mix.getNextValue();
 
-        return mix * _output.getNextValue();
-    }
+		return mix * _output.getNextValue();
+	}
 
-    //algorithm from: 
-    //https://jatinchowdhury18.medium.com/complex-nonlinearities-epsiode-2-harmonic-exciter-cd883d888a43
-    SampleType doubleSoft(SampleType input) {
-        return input;
-    }
+	// algorithm from:
+	// https://jatinchowdhury18.medium.com/complex-nonlinearities-epsiode-2-harmonic-exciter-cd883d888a43
+	SampleType doubleSoft(SampleType input)
+	{
+		return input;
+	}
 
+	SampleType softClipEx3(SampleType input)
+	{
+		auto wetSignal = input * _input.getNextValue();
 
+		if (wetSignal >= 1.0)
+		{
+			// wetSignal = std::abs(wetSignal) / wetSignal;
+			wetSignal = std::abs(wetSignal) / wetSignal - .21;
+		}
+		else if (wetSignal <= -1.0)
+		{
+			wetSignal = std::abs(wetSignal) / wetSignal + .21;
+		}
+		else
+		{
+			wetSignal = wetSignal * (.9 - pow(std::abs((3.0 * wetSignal) / 2 - std::abs(wetSignal)), 2.25));
+		}
 
-    SampleType softClipEx3(SampleType input) {
-        auto wetSignal = input * _input.getNextValue();
+		auto mix = (1.0 - _mix.getNextValue()) * input + wetSignal * _mix.getNextValue();
 
-        if (wetSignal >= 1.0) {
-            //wetSignal = std::abs(wetSignal) / wetSignal;
-            wetSignal = std::abs(wetSignal) / wetSignal -.21;
-        } 
-        else if (wetSignal <= -1.0){
-            wetSignal = std::abs(wetSignal) / wetSignal + .21; 
-        }
-        else {
-            wetSignal = wetSignal * (.9 - pow(std::abs((3.0 * wetSignal) / 2 - std::abs(wetSignal)), 2.25));
-        }
+		return mix * _output.getNextValue();
+	}
 
-        auto mix = (1.0 - _mix.getNextValue()) * input + wetSignal * _mix.getNextValue();
+	SampleType softClipEx5(SampleType input)
+	{
 
-        return mix * _output.getNextValue();
-        
-    }
-
-    SampleType softClipEx5(SampleType input) {
-
-
-        return input;
-    }
+		return input;
+	}
 
 	SampleType softClipReciprocal(SampleType input)
 	{
@@ -145,15 +155,16 @@ public:
 		return input;
 	}
 
-    enum class DistortionModel {
+	enum class DistortionModel
+	{
 
-        kHard,
-        doubleSoft,
-        kSoftEx3,
-        kSoftEx5,
-        kSoftReciprocal,
-        kSaturation
-    };
+		kHard,
+		doubleSoft,
+		kSoftEx3,
+		kSoftEx5,
+		kSoftReciprocal,
+		kSaturation
+	};
 
 	void setInput(SampleType newInput);
 	void setOutput(SampleType newOutput);
@@ -168,6 +179,6 @@ private:
 
 	float _sampleRate = 44100.0f;
 
-    //default distortion model
-    DistortionModel _model = DistortionModel::kSoftEx3;
+	// default distortion model
+	DistortionModel _model = DistortionModel::kSoftEx3;
 };
