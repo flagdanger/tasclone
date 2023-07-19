@@ -113,10 +113,10 @@ public:
 
         if (wetSignal >= 1.0) {
             //wetSignal = std::abs(wetSignal) / wetSignal;
-            wetSignal = std::abs(wetSignal) / wetSignal -.21;
+            wetSignal = std::abs(wetSignal) / wetSignal;
         } 
         else if (wetSignal <= -1.0){
-            wetSignal = std::abs(wetSignal) / wetSignal + .21; 
+            wetSignal = std::abs(wetSignal) / wetSignal; 
         }
         else {
             wetSignal = wetSignal * (.9 - pow(std::abs((3.0 * wetSignal) / 2 - std::abs(wetSignal)), 2.25));
