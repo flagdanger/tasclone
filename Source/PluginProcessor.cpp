@@ -20,13 +20,18 @@ TascloneAudioProcessor::TascloneAudioProcessor()
                        .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
                      #endif
                        )
-, _treeState(*this, nullptr, "PARAMETERS", createParameterLayout())
+    , _treeState(*this, nullptr, "PARAMETERS", createParameterLayout()),
+    _lowPassFilter(juce::dsp::IIR::Coefficients< float >::makeLowPass((44100 * 4), 20000.0))
+            
 #endif
 {
     _treeState.addParameterListener(inID, this);
     _treeState.addParameterListener(outID, this);
     _treeState.addParameterListener(mixID, this);
 
+    oversampling.reset(new juce::dsp::Oversampling<float>(2, 2, juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR, false));
+
+    //KEEP WORKING HERE YOU HAVE MORE TO DO HERE, AND MOVE DISTORION CLASS INTO PLUGINPROCESSOR
 }
 
 TascloneAudioProcessor::~TascloneAudioProcessor()
@@ -40,9 +45,10 @@ juce::AudioProcessorValueTreeState::ParameterLayout TascloneAudioProcessor::crea
 
     std::vector <std::unique_ptr<juce::RangedAudioParameter>> params;
 
-    auto inputParam = std::make_unique<juce::AudioParameterFloat>(inID, inName, 1.0f, 2.0f, 1.0f);
-    auto outputParam = std::make_unique<juce::AudioParameterFloat>(outID, outName, 0.0f, 2.0f, 1.0f);
-    auto mixParam = std::make_unique<juce::AudioParameterFloat>(mixID, mixName, 0.0f, 1.0f, 1.0f);
+    auto inputParam = std::make_unique<juce::AudioParameterFloat>(inID, inName, juce::NormalisableRange<float>(0.0f, 48.0f, 0.1f), 10.0f);
+    auto outputParam = std::make_unique<juce::AudioParameterFloat>(outID, outName, juce::NormalisableRange<float>(-48.0f, 10.0f, 0.1f), 0.0f);
+    auto toneParam = std::make_unique<juce::AudioParameterFloat>(toneID, toneName, juce::NormalisableRange<float>(20.0f, 20000.0f, 6.0f), 10000.0f);
+    auto mixParam = std::make_unique<juce::AudioParameterFloat>(mixID, mixName, juce::NormalisableRange<float>(0.0f, 1.0f, 0.1f), 1.0f);
 
     params.push_back(std::move(inputParam));
     params.push_back(std::move(outputParam));

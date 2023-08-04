@@ -17,5 +17,8 @@ extern const juce::String inName;
 extern const juce::String outID;
 extern const juce::String outName;
 
+extern const juce::String toneID;
+extern const juce::String toneName;
+
 extern const juce::String mixID;
 extern const juce::String mixName;

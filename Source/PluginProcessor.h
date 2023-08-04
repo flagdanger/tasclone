@@ -58,9 +58,12 @@ public:
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 
-    
+    void setFilter();
 
     juce::AudioProcessorValueTreeState _treeState;
+    juce::dsp::ProcessorDuplicator< juce::dsp::IIR::Filter <float>, juce::dsp::IIR::Coefficients<float>> _lowPassFilter;
+
+    std::unique_ptr<juce::dsp::Oversampling<float>> oversampling;
 
 private:
     juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();

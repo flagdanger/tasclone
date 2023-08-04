@@ -16,5 +16,8 @@ const juce::String inName = "Input";
 const juce::String outID = "output";
 const juce::String outName = "Output";
 
+const juce::String toneID = "tone";
+const juce::String toneName = "Tone";
+
 const juce::String mixID = "mix";
 const juce::String mixName = "Mix";
