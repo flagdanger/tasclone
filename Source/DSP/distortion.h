@@ -168,6 +168,7 @@ public:
 
 	void setInput(SampleType newInput);
 	void setOutput(SampleType newOutput);
+	void setTone(SampleType newOutput);
 	void setMix(SampleType newMix);
 
 	void setModel(DistortionModel newModel);
@@ -175,6 +176,7 @@ public:
 private:
 	juce::SmoothedValue<float> _input;
 	juce::SmoothedValue<float> _output;
+	juce::SmoothedValue<float> _tone;
 	juce::SmoothedValue<float> _mix;
 
 	float _sampleRate = 44100.0f;

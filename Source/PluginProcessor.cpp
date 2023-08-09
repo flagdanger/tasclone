@@ -8,6 +8,7 @@
 
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+//#include <math.h>
 
 //==============================================================================
 TascloneAudioProcessor::TascloneAudioProcessor()
@@ -20,16 +21,29 @@ TascloneAudioProcessor::TascloneAudioProcessor()
                        .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
                      #endif
                        )
-    , _treeState(*this, nullptr, "PARAMETERS", createParameterLayout()),
-    _lowPassFilter(juce::dsp::IIR::Coefficients< float >::makeLowPass((44100 * 4), 20000.0))
+    , _treeState(*this, nullptr, "PARAMETERS", 
+        { std::make_unique<juce::AudioParameterFloat>("inID","_input",juce::NormalisableRange<float>(0.0, 48.0,0.1),10.0),
+          std::make_unique<juce::AudioParameterFloat>("outID","_output",juce::NormalisableRange<float>(-48.0,10,0.1),0.0),
+          std::make_unique<juce::AudioParameterFloat>("toneID","_tone",juce::NormalisableRange<float>(20.0, 20000.0, 6.0),10000.0),
+          std::make_unique<juce::AudioParameterFloat>("mixID","_mix",juce::NormalisableRange<float>(0.0, 100.0,0.1), 50.0)
+        }
+    ),
+    _lowPassFilter(juce::dsp::IIR::Coefficients<float>::makeLowPass((44100 * 4), 20000.0))
             
 #endif
 {
     _treeState.addParameterListener(inID, this);
     _treeState.addParameterListener(outID, this);
+    _treeState.addParameterListener(toneID, this);
     _treeState.addParameterListener(mixID, this);
 
     oversampling.reset(new juce::dsp::Oversampling<float>(2, 2, juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR, false));
+
+    _input = 1.0;
+    _output = 1.0;
+    _tone = 10000.0;
+    _mix = 50.0;
+
 
     //KEEP WORKING HERE YOU HAVE MORE TO DO HERE, AND MOVE DISTORION CLASS INTO PLUGINPROCESSOR
 }
@@ -38,9 +52,12 @@ TascloneAudioProcessor::~TascloneAudioProcessor()
 {
     _treeState.removeParameterListener(inID, this);
     _treeState.removeParameterListener(outID, this);
+    _treeState.removeParameterListener(toneID, this);
     _treeState.removeParameterListener(mixID, this);
+    oversampling.reset();
 }
 
+/*
 juce::AudioProcessorValueTreeState::ParameterLayout TascloneAudioProcessor::createParameterLayout() {
 
     std::vector <std::unique_ptr<juce::RangedAudioParameter>> params;
@@ -52,10 +69,12 @@ juce::AudioProcessorValueTreeState::ParameterLayout TascloneAudioProcessor::crea
 
     params.push_back(std::move(inputParam));
     params.push_back(std::move(outputParam));
+    params.push_back(std::move(toneParam));
     params.push_back(std::move(mixParam));
 
     return { params.begin(), params.end() };
 }
+
 
 void TascloneAudioProcessor::parameterChanged(const juce::String& parameterID, float newValue) {
 
@@ -66,8 +85,10 @@ void TascloneAudioProcessor::updateParameters() {
 
     _distortionModule.setInput(_treeState.getRawParameterValue(inID)->load());
     _distortionModule.setOutput(_treeState.getRawParameterValue(outID)->load());
+    _distortionModule.setTone(_treeState.getRawParameterValue(toneID)->load());
     _distortionModule.setMix(_treeState.getRawParameterValue(mixID)->load());
 }
+*/
 
 //==============================================================================
 const juce::String TascloneAudioProcessor::getName() const
@@ -109,8 +130,7 @@ double TascloneAudioProcessor::getTailLengthSeconds() const
 
 int TascloneAudioProcessor::getNumPrograms()
 {
-    return 1;   // NB: some hosts don't cope very well if you tell them there are 0 programs,
-                // so this should be at least 1, even if you're not really implementing programs.
+    return 1;
 }
 
 int TascloneAudioProcessor::getCurrentProgram()
@@ -134,14 +154,17 @@ void TascloneAudioProcessor::changeProgramName (int index, const juce::String& n
 //==============================================================================
 void TascloneAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
+    oversampling->reset();
+    oversampling->initProcessing(static_cast<size_t> (samplesPerBlock));
+
     juce::dsp::ProcessSpec spec;
-    spec.maximumBlockSize = samplesPerBlock;
-    spec.sampleRate = sampleRate;
+    spec.maximumBlockSize = samplesPerBlock*3;
+    spec.sampleRate = sampleRate*4;
     spec.numChannels = getTotalNumOutputChannels();
 
-    _distortionModule.prepare(spec);
+    _lowPassFilter.prepare(spec);
+    _lowPassFilter.reset();
 
-    updateParameters();
 }
 
 void TascloneAudioProcessor::releaseResources()
@@ -176,6 +199,34 @@ bool TascloneAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts)
 }
 #endif
 
+
+
+
+
+
+
+void TascloneAudioProcessor::parameterChanged(const juce::String& parameterID, float val) {
+    if (parameterID == "inID") {
+        _input = pow(10, val / 20);
+    }
+    else if (parameterID == "outID") {
+        _output = pow(10, val / 20);
+    }
+    else if (parameterID == "toneID") {
+        _tone = val;
+    }
+    else if (parameterID == "mixID") {
+        _mix = val;
+    }
+}
+
+
+void TascloneAudioProcessor::updateFilter() {
+    float frequencyVal = 44100 * 4;
+    *_lowPassFilter.state = *juce::dsp::IIR::Coefficients<float>::makeLowPass(frequencyVal, _tone);
+}
+
+
 void TascloneAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
     juce::ScopedNoDenormals noDenormals;
@@ -191,8 +242,47 @@ void TascloneAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
 
-    juce::dsp::AudioBlock<float> block {buffer};
-    _distortionModule.process(juce::dsp::ProcessContextReplacing<float>(block));
+
+    //juce::dsp::AudioBlock<float> block {buffer};
+    juce::dsp::AudioBlock<float> blockInput(buffer);
+    juce::dsp::AudioBlock<float> blockOutput = oversampling->processSamplesUp(blockInput);
+
+    for (int channel = 0; channel < blockOutput.getNumChannels(); channel++) {
+        for (int sample = 0; sample < blockOutput.getNumSamples(); sample++) {
+
+            float signalIN = blockOutput.getSample(channel, sample);
+
+            signalIN *= _input;
+
+            float signalOUT;
+
+            //soft clip 
+            if (signalIN > 1.0f) {
+                signalOUT = log(-0.2f * signalIN + 2.85f);
+            }
+            else if (signalIN < 1.0f) {
+                signalOUT = -log(0.2f * signalIN + 2.85f);
+            }
+            else {
+                signalOUT = signalIN * pow(2.05f - abs((3.5f * signalIN) / 2 - 0.8f), 0.8f);
+            }
+
+            signalOUT *= (1 / (log(_input + 1) + 1));
+
+            outputSmoothed = outputSmoothed - 0.004 * (outputSmoothed - _output);
+            signalOUT *= outputSmoothed;
+
+            blockOutput.setSample(channel, sample, signalOUT);
+
+        }
+    }
+
+    updateFilter(); 
+    _lowPassFilter.process(juce::dsp::ProcessContextReplacing<float>(blockOutput));
+
+    oversampling->processSamplesDown(blockInput);
+
+    //_distortionModule.process(juce::dsp::ProcessContextReplacing<float>(block));
 }
 
 //==============================================================================

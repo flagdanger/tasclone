@@ -32,6 +32,9 @@ void Distortion<SampleType>::reset()
 	_output.reset(_sampleRate, 0.02);
 	_output.setTargetValue(0.0);
 
+    _tone.reset(_sampleRate, 0.02);
+    _tone.setTargetValue(0.0);
+
 	_mix.reset(_sampleRate, 0.02);
 	_mix.setTargetValue(1.0);
 }
@@ -46,6 +49,12 @@ template <typename SampleType>
 void Distortion<SampleType>::setOutput(SampleType newOutput)
 {
 	_output.setTargetValue(newOutput);
+}
+
+template <typename SampleType>
+void Distortion<SampleType>::setTone(SampleType newTone)
+{
+    _output.setTargetValue(newTone);
 }
 
 template <typename SampleType>

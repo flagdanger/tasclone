@@ -9,7 +9,7 @@
 #pragma once
 
 #include <JuceHeader.h>
-#include "DSP/distortion.h"
+//#include "DSP/distortion.h"
 #include "Params/parameters.h"
 
 //==============================================================================
@@ -58,19 +58,27 @@ public:
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 
-    void setFilter();
+    
+    void parameterChanged(const juce::String &parameterID, float newValue) override;
+    void updateFilter();
+
 
     juce::AudioProcessorValueTreeState _treeState;
-    juce::dsp::ProcessorDuplicator< juce::dsp::IIR::Filter <float>, juce::dsp::IIR::Coefficients<float>> _lowPassFilter;
-
     std::unique_ptr<juce::dsp::Oversampling<float>> oversampling;
 
 private:
     juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
-    void parameterChanged(const juce::String& parameterID, float newValue) override;
-    void updateParameters();
+    //void parameterChanged(const juce::String& parameterID, float newValue) override;
+    
 
-    Distortion<float> _distortionModule;
+    float _input;
+    float _output;
+    float outputSmoothed;
+    float _tone;
+    float _mix;
+
+    juce::dsp::ProcessorDuplicator< juce::dsp::IIR::Filter <float>, juce::dsp::IIR::Coefficients<float>> _lowPassFilter;
+    //Distortion<float> _distortionModule;
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TascloneAudioProcessor)
 };
