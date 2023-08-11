@@ -24,7 +24,7 @@ TascloneAudioProcessor::TascloneAudioProcessor()
 						 ),
 	  audioTree(*this, nullptr, Identifier("PARAMETERS"),
 				{std::make_unique<AudioParameterFloat>("InputGain_ID", "InputGain", NormalisableRange<float>(0.0, 48.0, 0.1), 10.0),
-				 std::make_unique<AudioParameterFloat>("OutputGain_ID", "OutputGain", NormalisableRange<float>(-48.0, 10, 0.1), 0.0),
+				 std::make_unique<AudioParameterFloat>("OutputGain_ID", "OutputGain", NormalisableRange<float>(-48.0, 10.0, 0.1), 0.0),
 				 std::make_unique<AudioParameterFloat>("ToneControlle_ID", "ToneControlle", NormalisableRange<float>(20.0, 20000.0, 6.0), 10000)}),
 	  lowPassFilter(dsp::IIR::Coefficients<float>::makeLowPass((44100 * 4), 20000.0))
 
@@ -36,9 +36,9 @@ TascloneAudioProcessor::TascloneAudioProcessor()
 	audioTree.addParameterListener("ToneControlle_ID", this);
 	oversampling.reset(new dsp::Oversampling<float>(2, 2, dsp::Oversampling<float>::filterHalfBandPolyphaseIIR, false));
 
-	inputGainValue = 1.0;
-	outputGainValue = 1.0;
-	toneControlleValue = 10000;
+	inputValue = 1.0;
+	outputValue = 1.0;
+	toneValue = 10000;
 
 	distortionType = 1;
 	checkFilter = 1;
@@ -118,7 +118,7 @@ void TascloneAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBloc
 	oversampling->initProcessing(static_cast<size_t>(samplesPerBlock));
 
 	dsp::ProcessSpec spec;
-	// Sample Rate of the filter must be 4 times because the Oversampling
+	
 	spec.sampleRate = sampleRate * 4;
 	spec.maximumBlockSize = samplesPerBlock * 3;
 	spec.numChannels = getTotalNumOutputChannels();
@@ -158,28 +158,24 @@ bool TascloneAudioProcessor::isBusesLayoutSupported(const BusesLayout &layouts) 
 
 void TascloneAudioProcessor::parameterChanged(const String &parameterID, float newValue)
 {
-	// Parameters update  when sliders moved
 	if (parameterID == "InputGain_ID")
 	{
-		// in db
-		inputGainValue = pow(10, newValue / 20);
-		// inputGainValue = newValue;
+		inputValue = pow(10, newValue / 20);
 	}
 	else if (parameterID == "OutputGain_ID")
 	{
-		// in db
-		outputGainValue = pow(10, newValue / 20);
+		outputValue = pow(10, newValue / 20);
 	}
 	else if (parameterID == "ToneControlle_ID")
 	{
-		toneControlleValue = newValue;
+		toneValue = newValue;
 	}
 }
 
 void TascloneAudioProcessor::updateFilter()
 {
 	float frequency = 44100 * 4;
-	*lowPassFilter.state = *dsp::IIR::Coefficients<float>::makeLowPass(frequency, toneControlleValue);
+	*lowPassFilter.state = *dsp::IIR::Coefficients<float>::makeLowPass(frequency, toneValue);
 }
 
 void TascloneAudioProcessor::processBlock(AudioBuffer<float> &buffer, MidiBuffer &midiMessages)
@@ -191,107 +187,50 @@ void TascloneAudioProcessor::processBlock(AudioBuffer<float> &buffer, MidiBuffer
 	for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
 		buffer.clear(i, 0, buffer.getNumSamples());
 
-	dsp::AudioBlock<float> blockInput(buffer);
-	dsp::AudioBlock<float> blockOutput = oversampling->processSamplesUp(blockInput);
+	juce::dsp::AudioBlock<float> blockInput(buffer);
+	juce::dsp::AudioBlock<float> blockOutput = oversampling->processSamplesUp(blockInput);
 
-	// lowPassFilter (condition used to check if apply the filter before or after the distortion
-	if (checkFilter == 0)
-	{
-		updateFilter();
-		lowPassFilter.process(dsp::ProcessContextReplacing<float>(blockOutput));
-	}
+	for (int channel = 0; channel < blockOutput.getNumChannels(); channel++) {
+		for (int sample = 0; sample < blockOutput.getNumSamples(); sample++) {
 
-	for (int channel = 0; channel < blockOutput.getNumChannels(); channel++)
-	{
-		for (int sample = 0; sample < blockOutput.getNumSamples(); sample++)
-		{
-			// Take the sample from the Audio Block
-			float in = blockOutput.getSample(channel, sample);
+			float signalIN = blockOutput.getSample(channel, sample);
 
-			// Input Gain (Not for Full wave and Half wave rectifier)
-			if (distortionType == 1 || distortionType == 2 || distortionType == 3)
-			{
-				in *= inputGainValue;
-			}
+			signalIN *= inputValue;
 
-			// Distortion Type
-			float out;
-			if (distortionType == 1)
-			{
-				// Simple hard clipping
-				float threshold = 1.0f;
-				if (in > threshold)
-					out = threshold;
-				else if (in < -threshold)
-					out = -threshold;
-				else
-					out = in;
-			}
-			else if (distortionType == 2)
-			{
-				// Soft clipping based on quadratic function
-				float threshold1 = 1.0f / 3.0f;
-				float threshold2 = 2.0f / 3.0f;
-				if (in > threshold2)
-					out = 1.0f;
-				else if (in > threshold1)
-					out = (3.0f - (2.0f - 3.0f * in) *
-									  (2.0f - 3.0f * in)) /
-						  3.0f;
-				else if (in < -threshold2)
-					out = -1.0f;
-				else if (in < -threshold1)
-					out = -(3.0f - (2.0f + 3.0f * in) *
-									   (2.0f + 3.0f * in)) /
-						  3.0f;
-				else
-					out = 2.0f * in;
-			}
-			else if (distortionType == 3)
-			{
-				// Soft clipping based on exponential function
-				if (in > 0)
-					out = 1.0f - expf(-in);
-				else
-					out = -1.0f + expf(in);
-			}
-			else if (distortionType == 4)
-			{
-				// Full-wave rectifier (absolute value)
-				out = fabsf(in);
-			}
-			else if (distortionType == 5)
-			{
-				// Half-wave rectifier
-				if (in > 0)
-					out = in;
-				else
-					out = 0;
-			}
+			float signalOUT;
 
-			// match output with input
-			if (distortionType == 1 || distortionType == 2 || distortionType == 3)
-			{
-				out *= (1 / (log(inputGainValue + 1) + 1));
+			//soft clip 
+			/*
+			if (signalIN > 0.5f) {
+				signalOUT = std::log(-0.2f * signalIN + 2.85f);
 			}
+			else if (signalIN < 0.5f) {
+				signalOUT = -std::log(0.2f * signalIN + 2.85f);
+			}
+			else {
+				signalOUT = signalIN * std::pow(2.05f - std::abs((3.5f * signalIN) / 2 - 0.8f), 0.8f);
+			}
+			*/
 
-			// Allow the user to modify the output level (smoothing)
-			parameterOutputGainSmoothed = parameterOutputGainSmoothed - 0.004 * (parameterOutputGainSmoothed - outputGainValue);
-			out *= parameterOutputGainSmoothed;
+			//sigmoid function
+			if (signalIN > 0)
+				signalOUT = 1.0f - expf(-signalIN);
+			else
+				signalOUT = -1.0f + expf(signalIN);
 
-			// Set the new sample in the audio block
-			blockOutput.setSample(channel, sample, out);
+			//signalOUT *= (1 / (std::log(inputValue + 1) + 1));
+
+			outputGainSmoothed = outputGainSmoothed - 0.004 * (outputGainSmoothed - outputValue);
+			signalOUT *= outputGainSmoothed;
+
+			blockOutput.setSample(channel, sample, signalOUT);
+
 		}
 	}
 
-	// lowPassFilter (condition used to check if apply the filter before or after the distortion
-	if (checkFilter == 1)
-	{
-		updateFilter();
-		lowPassFilter.process(dsp::ProcessContextReplacing<float>(blockOutput));
-	}
+	updateFilter();
+	lowPassFilter.process(juce::dsp::ProcessContextReplacing<float>(blockOutput));
 
-	// DownSampling
 	oversampling->processSamplesDown(blockInput);
 }
 

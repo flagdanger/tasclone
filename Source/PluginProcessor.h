@@ -71,8 +71,8 @@ private:
 	//==============================================================================
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(TascloneAudioProcessor)
 
-	float parameterOutputGainSmoothed;
-	float inputGainValue, outputGainValue, toneControlleValue;
+	float outputGainSmoothed;
+	float inputValue, outputValue, toneValue;
 	std::size_t numChan = 2;
 	std::size_t fact = 2;
 	dsp::ProcessorDuplicator<dsp::IIR::Filter<float>, dsp::IIR::Coefficients<float>> lowPassFilter;
