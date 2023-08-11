@@ -4,9 +4,6 @@
               pluginFormats="buildStandalone,buildVST3" pluginVST3Category="Distortion">
   <MAINGROUP id="wlahAI" name="Tasclone">
     <GROUP id="{25C072B7-8F07-C087-53F9-000921A70D49}" name="Source">
-      <FILE id="jkZwOh" name="ParameterIds.cpp" compile="1" resource="0"
-            file="Source/ParameterIds.cpp"/>
-      <FILE id="ArRLVD" name="ParameterIds.h" compile="0" resource="0" file="Source/ParameterIds.h"/>
       <FILE id="XGBoet" name="PluginProcessor.cpp" compile="1" resource="0"
             file="Source/PluginProcessor.cpp"/>
       <FILE id="EGR1Dq" name="PluginProcessor.h" compile="0" resource="0"

@@ -20,7 +20,7 @@ TascloneAudioProcessorEditor::TascloneAudioProcessorEditor(TascloneAudioProcesso
 	sliderAttachInputGain.reset(new AudioProcessorValueTreeState::SliderAttachment(audioTree, inputGainId, inputGain));
 
 	// input gain label
-	inputGainLabel.setText("Input Gain", dontSendNotification);
+	inputGainLabel.setText("Input", dontSendNotification);
 	inputGainLabel.setJustificationType(Justification::centred);
 	addAndMakeVisible(inputGainLabel);
 
@@ -32,7 +32,7 @@ TascloneAudioProcessorEditor::TascloneAudioProcessorEditor(TascloneAudioProcesso
 	sliderAttachOutputGain.reset(new AudioProcessorValueTreeState::SliderAttachment(audioTree, outputGainId, outputGain));
 
 	// outpit gain label
-	outputGainLabel.setText("Output Gain", dontSendNotification);
+	outputGainLabel.setText("Output", dontSendNotification);
 	outputGainLabel.setJustificationType(Justification::centred);
 	addAndMakeVisible(outputGainLabel);
 
@@ -44,7 +44,7 @@ TascloneAudioProcessorEditor::TascloneAudioProcessorEditor(TascloneAudioProcesso
 	sliderAttachToneControlle.reset(new AudioProcessorValueTreeState::SliderAttachment(audioTree, toneControllerId, toneController));
 
 	// tone controller label
-	toneLabel.setText("Tone Control", dontSendNotification);
+	toneLabel.setText("Tone", dontSendNotification);
 	toneLabel.setJustificationType(Justification::centred);
 	addAndMakeVisible(toneLabel);
 }
