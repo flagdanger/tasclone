@@ -13,42 +13,40 @@
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "PluginProcessor.h"
 
-using namespace juce;
-
 //==============================================================================
 /**
  */
-class TascloneAudioProcessorEditor : public AudioProcessorEditor,
-									 public Slider::Listener
+class TascloneAudioProcessorEditor : public juce::AudioProcessorEditor,
+									 public juce::Slider::Listener
 {
 public:
-	TascloneAudioProcessorEditor(TascloneAudioProcessor &, AudioProcessorValueTreeState &);
+	TascloneAudioProcessorEditor(TascloneAudioProcessor &, juce::AudioProcessorValueTreeState &);
 	~TascloneAudioProcessorEditor();
 
 	//==============================================================================
-	void paint(Graphics &) override;
+	void paint(juce::Graphics &) override;
 	void resized() override;
 
-	void sliderValueChanged(Slider *slider) override;
+	void sliderValueChanged(juce::Slider *slider) override;
 
 private:
 	// This reference is provided as a quick way for your editor to
 	// access the processor object that created it.
 	TascloneAudioProcessor &processor;
-	AudioProcessorValueTreeState &audioTree;
+	juce::AudioProcessorValueTreeState &audioTree;
 
-	Slider inputGain;
-	Label inputGainLabel;
+	juce::Slider inputGain;
+	juce::Label inputGainLabel;
 
-	Slider outputGain;
-	Label outputGainLabel;
+	juce::Slider outputGain;
+	juce::Label outputGainLabel;
 
-	Slider toneController;
-	Label toneLabel;
+	juce::Slider toneController;
+	juce::Label toneLabel;
 
-	std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment> sliderAttachInputGain;
-	std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment> sliderAttachOutputGain;
-	std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment> sliderAttachToneControlle;
+	std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> sliderAttachInputGain;
+	std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> sliderAttachOutputGain;
+	std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> sliderAttachToneControlle;
 
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(TascloneAudioProcessorEditor)
 };

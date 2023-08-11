@@ -21,16 +21,16 @@ TascloneAudioProcessor::TascloneAudioProcessor()
 	: AudioProcessor(BusesProperties()
 #if !JucePlugin_IsMidiEffect
 #if !JucePlugin_IsSynth
-						 .withInput("Input", AudioChannelSet::stereo(), true)
+						 .withInput("Input", juce::AudioChannelSet::stereo(), true)
 #endif
-						 .withOutput("Output", AudioChannelSet::stereo(), true)
+						 .withOutput("Output", juce::AudioChannelSet::stereo(), true)
 #endif
 						 ),
-	  audioTree(*this, nullptr, Identifier("PARAMETERS"),
-				{std::make_unique<AudioParameterFloat>(inputGainId, "InputGain", NormalisableRange<float>(0.0, 48.0, 0.1), 10.0),
-				 std::make_unique<AudioParameterFloat>(outputGainId, "OutputGain", NormalisableRange<float>(-48.0, 10.0, 0.1), 0.0),
-				 std::make_unique<AudioParameterFloat>(toneControllerId, "ToneController", NormalisableRange<float>(20.0, 20000.0, 6.0), 10000)}),
-	  lowPassFilter(dsp::IIR::Coefficients<float>::makeLowPass((44100 * 4), 20000.0))
+	  audioTree(*this, nullptr, juce::Identifier("PARAMETERS"),
+				{std::make_unique<juce::AudioParameterFloat>(inputGainId, "InputGain", juce::NormalisableRange<float>(0.0, 48.0, 0.1), 10.0),
+				 std::make_unique<juce::AudioParameterFloat>(outputGainId, "OutputGain", juce::NormalisableRange<float>(-48.0, 10.0, 0.1), 0.0),
+				 std::make_unique<juce::AudioParameterFloat>(toneControllerId, "ToneController", juce::NormalisableRange<float>(20.0, 20000.0, 6.0), 10000)}),
+	  lowPassFilter(juce::dsp::IIR::Coefficients<float>::makeLowPass((44100 * 4), 20000.0))
 
 #endif
 {
@@ -38,7 +38,7 @@ TascloneAudioProcessor::TascloneAudioProcessor()
 	audioTree.addParameterListener(inputGainId, this);
 	audioTree.addParameterListener(outputGainId, this);
 	audioTree.addParameterListener(toneControllerId, this);
-	oversampling.reset(new dsp::Oversampling<float>(2, 2, dsp::Oversampling<float>::filterHalfBandPolyphaseIIR, false));
+	oversampling.reset(new juce::dsp::Oversampling<float>(2, 2, juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR, false));
 
 	inputValue = 1.0;
 	outputValue = 1.0;
@@ -54,7 +54,7 @@ TascloneAudioProcessor::~TascloneAudioProcessor()
 }
 
 //==============================================================================
-const String TascloneAudioProcessor::getName() const
+const juce::String TascloneAudioProcessor::getName() const
 {
 	return JucePlugin_Name;
 }
@@ -106,12 +106,12 @@ void TascloneAudioProcessor::setCurrentProgram(int index)
 {
 }
 
-const String TascloneAudioProcessor::getProgramName(int index)
+const juce::String TascloneAudioProcessor::getProgramName(int index)
 {
 	return {};
 }
 
-void TascloneAudioProcessor::changeProgramName(int index, const String &newName)
+void TascloneAudioProcessor::changeProgramName(int index, const juce::String &newName)
 {
 }
 
@@ -121,7 +121,7 @@ void TascloneAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBloc
 	oversampling->reset();
 	oversampling->initProcessing(static_cast<size_t>(samplesPerBlock));
 
-	dsp::ProcessSpec spec;
+	juce::dsp::ProcessSpec spec;
 	
 	spec.sampleRate = sampleRate * 4;
 	spec.maximumBlockSize = samplesPerBlock * 3;
@@ -146,7 +146,7 @@ bool TascloneAudioProcessor::isBusesLayoutSupported(const BusesLayout &layouts) 
 #else
 	// This is the place where you check if the layout is supported.
 	// In this template code we only support mono or stereo.
-	if (layouts.getMainOutputChannelSet() != AudioChannelSet::mono() && layouts.getMainOutputChannelSet() != AudioChannelSet::stereo())
+	if (layouts.getMainOutputChannelSet() != juce::AudioChannelSet::mono() && layouts.getMainOutputChannelSet() != juce::AudioChannelSet::stereo())
 		return false;
 
 		// This checks if the input layout matches the output layout
@@ -160,7 +160,7 @@ bool TascloneAudioProcessor::isBusesLayoutSupported(const BusesLayout &layouts) 
 }
 #endif
 
-void TascloneAudioProcessor::parameterChanged(const String &parameterID, float newValue)
+void TascloneAudioProcessor::parameterChanged(const juce::String &parameterID, float newValue)
 {
 	if (parameterID == inputGainId)
 	{
@@ -179,12 +179,12 @@ void TascloneAudioProcessor::parameterChanged(const String &parameterID, float n
 void TascloneAudioProcessor::updateFilter()
 {
 	float frequency = 44100 * 4;
-	*lowPassFilter.state = *dsp::IIR::Coefficients<float>::makeLowPass(frequency, toneValue);
+	*lowPassFilter.state = *juce::dsp::IIR::Coefficients<float>::makeLowPass(frequency, toneValue);
 }
 
-void TascloneAudioProcessor::processBlock(AudioBuffer<float> &buffer, MidiBuffer &midiMessages)
+void TascloneAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce::MidiBuffer &midiMessages)
 {
-	ScopedNoDenormals noDenormals;
+	juce::ScopedNoDenormals noDenormals;
 	auto totalNumInputChannels = getTotalNumInputChannels();
 	auto totalNumOutputChannels = getTotalNumOutputChannels();
 
@@ -244,13 +244,13 @@ bool TascloneAudioProcessor::hasEditor() const
 	return true; // (change this to false if you choose to not supply an editor)
 }
 
-AudioProcessorEditor *TascloneAudioProcessor::createEditor()
+juce::AudioProcessorEditor *TascloneAudioProcessor::createEditor()
 {
 	return new TascloneAudioProcessorEditor(*this, audioTree);
 }
 
 //==============================================================================
-void TascloneAudioProcessor::getStateInformation(MemoryBlock &destData)
+void TascloneAudioProcessor::getStateInformation(juce::MemoryBlock &destData)
 {
 	// You should use this method to store your parameters in the memory block.
 	// You could do that either as raw data, or use the XML or ValueTree classes
@@ -265,7 +265,7 @@ void TascloneAudioProcessor::setStateInformation(const void *data, int sizeInByt
 
 //==============================================================================
 // This creates new instances of the plugin..
-AudioProcessor *JUCE_CALLTYPE createPluginFilter()
+juce::AudioProcessor *JUCE_CALLTYPE createPluginFilter()
 {
 	return new TascloneAudioProcessor();
 }
