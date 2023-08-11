@@ -38,13 +38,13 @@ private:
 	AudioProcessorValueTreeState &audioTree;
 
 	Slider inputGain;
-	// Label inputGainLabel;
+	Label inputGainLabel;
 
 	Slider outputGain;
-	// Label outputGainLabel;
+	Label outputGainLabel;
 
-	Slider toneControlle;
-	// Label toneLabel;
+	Slider toneController;
+	Label toneLabel;
 
 	std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment> sliderAttachInputGain;
 	std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment> sliderAttachOutputGain;

@@ -10,6 +10,7 @@
 
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+#include "ParameterIds.h"
 
 //==============================================================================
 TascloneAudioProcessor::TascloneAudioProcessor()
@@ -23,17 +24,17 @@ TascloneAudioProcessor::TascloneAudioProcessor()
 #endif
 						 ),
 	  audioTree(*this, nullptr, Identifier("PARAMETERS"),
-				{std::make_unique<AudioParameterFloat>("InputGain_ID", "InputGain", NormalisableRange<float>(0.0, 48.0, 0.1), 10.0),
-				 std::make_unique<AudioParameterFloat>("OutputGain_ID", "OutputGain", NormalisableRange<float>(-48.0, 10, 0.1), 0.0),
-				 std::make_unique<AudioParameterFloat>("ToneControlle_ID", "ToneControlle", NormalisableRange<float>(20.0, 20000.0, 6.0), 10000)}),
+				{std::make_unique<AudioParameterFloat>(inputGainId, "InputGain", NormalisableRange<float>(0.0, 48.0, 0.1), 10.0),
+				 std::make_unique<AudioParameterFloat>(outputGainId, "OutputGain", NormalisableRange<float>(-48.0, 10, 0.1), 0.0),
+				 std::make_unique<AudioParameterFloat>(toneControllerId, "ToneController", NormalisableRange<float>(20.0, 20000.0, 6.0), 10000)}),
 	  lowPassFilter(dsp::IIR::Coefficients<float>::makeLowPass((44100 * 4), 20000.0))
 
 #endif
 {
 
-	audioTree.addParameterListener("InputGain_ID", this);
-	audioTree.addParameterListener("OutputGain_ID", this);
-	audioTree.addParameterListener("ToneControlle_ID", this);
+	audioTree.addParameterListener(inputGainId, this);
+	audioTree.addParameterListener(outputGainId, this);
+	audioTree.addParameterListener(toneControllerId, this);
 	oversampling.reset(new dsp::Oversampling<float>(2, 2, dsp::Oversampling<float>::filterHalfBandPolyphaseIIR, false));
 
 	inputGainValue = 1.0;
@@ -159,18 +160,18 @@ bool TascloneAudioProcessor::isBusesLayoutSupported(const BusesLayout &layouts) 
 void TascloneAudioProcessor::parameterChanged(const String &parameterID, float newValue)
 {
 	// Parameters update  when sliders moved
-	if (parameterID == "InputGain_ID")
+	if (parameterID == inputGainId)
 	{
 		// in db
 		inputGainValue = pow(10, newValue / 20);
 		// inputGainValue = newValue;
 	}
-	else if (parameterID == "OutputGain_ID")
+	else if (parameterID == outputGainId)
 	{
 		// in db
 		outputGainValue = pow(10, newValue / 20);
 	}
-	else if (parameterID == "ToneControlle_ID")
+	else if (parameterID == toneControllerId)
 	{
 		toneControlleValue = newValue;
 	}
