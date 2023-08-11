@@ -1,7 +1,9 @@
 /*
   ==============================================================================
 
-    This file contains the basic framework code for a JUCE plugin editor.
+	This file was auto-generated!
+
+	It contains the basic framework code for a JUCE plugin editor.
 
   ==============================================================================
 */
@@ -9,50 +11,44 @@
 #pragma once
 
 #include "../JuceLibraryCode/JuceHeader.h"
-#include <JuceHeader.h>
 #include "PluginProcessor.h"
+
+using namespace juce;
 
 //==============================================================================
 /**
-*/
-class TascloneAudioProcessorEditor  : public juce::AudioProcessorEditor,
-    public juce::Slider::Listener
-    //public juce::Combobox:Listener
+ */
+class TascloneAudioProcessorEditor : public AudioProcessorEditor,
+									 public Slider::Listener
 {
 public:
-    TascloneAudioProcessorEditor (TascloneAudioProcessor&, juce::AudioProcessorValueTreeState&);
-    ~TascloneAudioProcessorEditor() override;
+	TascloneAudioProcessorEditor(TascloneAudioProcessor &, AudioProcessorValueTreeState &);
+	~TascloneAudioProcessorEditor();
 
-    //==============================================================================
-    void paint (juce::Graphics&) override;
-    void resized() override;
+	//==============================================================================
+	void paint(Graphics &) override;
+	void resized() override;
 
-    void sliderValueChanged(juce::Slider *slider) override;
+	void sliderValueChanged(Slider *slider) override;
 
 private:
-    // This reference is provided as a quick way for your editor to
-    // access the processor object that created it.
-    TascloneAudioProcessor& audioProcessor;
-    juce::AudioProcessorValueTreeState& _treeState;
+	// This reference is provided as a quick way for your editor to
+	// access the processor object that created it.
+	TascloneAudioProcessor &processor;
+	AudioProcessorValueTreeState &audioTree;
 
-    juce::Slider inputGain;
-    juce::Label inputLabel;
+	Slider inputGain;
+	// Label inputGainLabel;
 
-    juce::Slider outputGain;
-    juce::Label outputLabel;
+	Slider outputGain;
+	// Label outputGainLabel;
 
-    juce::Slider toneKnob;
-    juce::Label toneLabel;
+	Slider toneControlle;
+	// Label toneLabel;
 
-    juce::Slider mixKnob;
-    juce::Label mixLabel;
+	std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment> sliderAttachInputGain;
+	std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment> sliderAttachOutputGain;
+	std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment> sliderAttachToneControlle;
 
-    std::unique_ptr <juce::AudioProcessorValueTreeState::SliderAttachment> sliderAttachmentInput;
-    std::unique_ptr <juce::AudioProcessorValueTreeState::SliderAttachment> sliderAttachmentOutput;
-    std::unique_ptr <juce::AudioProcessorValueTreeState::SliderAttachment> sliderAttachmentTone;
-    std::unique_ptr <juce::AudioProcessorValueTreeState::SliderAttachment> sliderAttachmentMix;
-
-    KnobLookAndFeel knobLookAndFeel;
-
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TascloneAudioProcessorEditor)
+	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(TascloneAudioProcessorEditor)
 };

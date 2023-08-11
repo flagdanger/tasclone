@@ -1,84 +1,79 @@
 /*
   ==============================================================================
 
-    This file contains the basic framework code for a JUCE plugin processor.
+	This file was auto-generated!
+
+	It contains the basic framework code for a JUCE plugin processor.
 
   ==============================================================================
 */
 
 #pragma once
 
-#include <JuceHeader.h>
-//#include "DSP/distortion.h"
-//#include "Params/parameters.h"
+#include "../JuceLibraryCode/JuceHeader.h"
+
+using namespace juce;
 
 //==============================================================================
 /**
-*/
-class TascloneAudioProcessor  : public juce::AudioProcessor, juce::AudioProcessorValueTreeState::Listener
-                            #if JucePlugin_Enable_ARA
-                             , public juce::AudioProcessorARAExtension
-                            #endif
+ */
+class TascloneAudioProcessor : public AudioProcessor,
+							   public AudioProcessorValueTreeState::Listener
 {
 public:
-    //==============================================================================
-    TascloneAudioProcessor();
-    ~TascloneAudioProcessor() override;
+	//==============================================================================
+	TascloneAudioProcessor();
+	~TascloneAudioProcessor();
 
-    //==============================================================================
-    void prepareToPlay (double sampleRate, int samplesPerBlock) override;
-    void releaseResources() override;
+	//==============================================================================
+	void prepareToPlay(double sampleRate, int samplesPerBlock) override;
+	void releaseResources() override;
 
-   #ifndef JucePlugin_PreferredChannelConfigurations
-    bool isBusesLayoutSupported (const BusesLayout& layouts) const override;
-   #endif
+#ifndef JucePlugin_PreferredChannelConfigurations
+	bool isBusesLayoutSupported(const BusesLayout &layouts) const override;
+#endif
 
-    void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
+	void processBlock(AudioBuffer<float> &, MidiBuffer &) override;
 
-    //==============================================================================
-    juce::AudioProcessorEditor* createEditor() override;
-    bool hasEditor() const override;
+	//==============================================================================
+	AudioProcessorEditor *createEditor() override;
+	bool hasEditor() const override;
 
-    //==============================================================================
-    const juce::String getName() const override;
+	//==============================================================================
+	const String getName() const override;
 
-    bool acceptsMidi() const override;
-    bool producesMidi() const override;
-    bool isMidiEffect() const override;
-    double getTailLengthSeconds() const override;
+	bool acceptsMidi() const override;
+	bool producesMidi() const override;
+	bool isMidiEffect() const override;
+	double getTailLengthSeconds() const override;
 
-    //==============================================================================
-    int getNumPrograms() override;
-    int getCurrentProgram() override;
-    void setCurrentProgram (int index) override;
-    const juce::String getProgramName (int index) override;
-    void changeProgramName (int index, const juce::String& newName) override;
+	//==============================================================================
+	int getNumPrograms() override;
+	int getCurrentProgram() override;
+	void setCurrentProgram(int index) override;
+	const String getProgramName(int index) override;
+	void changeProgramName(int index, const String &newName) override;
 
-    //==============================================================================
-    void getStateInformation (juce::MemoryBlock& destData) override;
-    void setStateInformation (const void* data, int sizeInBytes) override;
+	//==============================================================================
+	void getStateInformation(MemoryBlock &destData) override;
+	void setStateInformation(const void *data, int sizeInBytes) override;
 
-    
-    void parameterChanged(const juce::String &parameterID, float newValue) override;
-    void updateFilter();
+	void parameterChanged(const String &parameterID, float newValue) override;
 
+	void updateFilter();
 
-    juce::AudioProcessorValueTreeState _treeState;
-    std::unique_ptr<juce::dsp::Oversampling<float>> oversampling;
+	AudioProcessorValueTreeState audioTree;
+	int distortionType, checkFilter;
+
+	std::unique_ptr<dsp::Oversampling<float>> oversampling;
 
 private:
-    juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
-    //void parameterChanged(const juce::String& parameterID, float newValue) override;
-    
+	//==============================================================================
+	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(TascloneAudioProcessor)
 
-    float _input;
-    float _output;
-    float outputSmoothed;
-    float _tone;
-    float _mix;
-
-    juce::dsp::ProcessorDuplicator< juce::dsp::IIR::Filter <float>, juce::dsp::IIR::Coefficients<float>> _lowPassFilter;
-    //Distortion<float> _distortionModule;
-    //==============================================================================
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TascloneAudioProcessor)
+	float parameterOutputGainSmoothed;
+	float inputGainValue, outputGainValue, toneControlleValue;
+	std::size_t numChan = 2;
+	std::size_t fact = 2;
+	dsp::ProcessorDuplicator<dsp::IIR::Filter<float>, dsp::IIR::Coefficients<float>> lowPassFilter;
 };

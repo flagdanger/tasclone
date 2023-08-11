@@ -1,321 +1,328 @@
 /*
   ==============================================================================
 
-    This file contains the basic framework code for a JUCE plugin processor.
+	This file was auto-generated!
+
+	It contains the basic framework code for a JUCE plugin processor.
 
   ==============================================================================
 */
 
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
-//#include <math.h>
 
 //==============================================================================
 TascloneAudioProcessor::TascloneAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
-     : AudioProcessor (BusesProperties()
-                     #if ! JucePlugin_IsMidiEffect
-                      #if ! JucePlugin_IsSynth
-                       .withInput  ("Input",  juce::AudioChannelSet::stereo(), true)
-                      #endif
-                       .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
-                     #endif
-                       )
-    , _treeState(*this, nullptr, "PARAMETERS", 
-        { std::make_unique<juce::AudioParameterFloat>("inID","_input",juce::NormalisableRange<float>(0.0, 48.0,0.1),10.0),
-          std::make_unique<juce::AudioParameterFloat>("outID","_output",juce::NormalisableRange<float>(-48.0,10,0.1),0.0),
-          std::make_unique<juce::AudioParameterFloat>("toneID","_tone",juce::NormalisableRange<float>(20.0, 20000.0, 6.0),10000.0),
-          std::make_unique<juce::AudioParameterFloat>("mixID","_mix",juce::NormalisableRange<float>(0.0, 100.0,0.1), 50.0)
-        }
-    ),
-    _lowPassFilter(juce::dsp::IIR::Coefficients<float>::makeLowPass((44100 * 4), 20000.0))
-            
+	: AudioProcessor(BusesProperties()
+#if !JucePlugin_IsMidiEffect
+#if !JucePlugin_IsSynth
+						 .withInput("Input", AudioChannelSet::stereo(), true)
+#endif
+						 .withOutput("Output", AudioChannelSet::stereo(), true)
+#endif
+						 ),
+	  audioTree(*this, nullptr, Identifier("PARAMETERS"),
+				{std::make_unique<AudioParameterFloat>("InputGain_ID", "InputGain", NormalisableRange<float>(0.0, 48.0, 0.1), 10.0),
+				 std::make_unique<AudioParameterFloat>("OutputGain_ID", "OutputGain", NormalisableRange<float>(-48.0, 10, 0.1), 0.0),
+				 std::make_unique<AudioParameterFloat>("ToneControlle_ID", "ToneControlle", NormalisableRange<float>(20.0, 20000.0, 6.0), 10000)}),
+	  lowPassFilter(dsp::IIR::Coefficients<float>::makeLowPass((44100 * 4), 20000.0))
+
 #endif
 {
-    _treeState.addParameterListener(inID, this);
-    _treeState.addParameterListener(outID, this);
-    _treeState.addParameterListener(toneID, this);
-    _treeState.addParameterListener(mixID, this);
 
-    oversampling.reset(new juce::dsp::Oversampling<float>(2, 2, juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR, false));
+	audioTree.addParameterListener("InputGain_ID", this);
+	audioTree.addParameterListener("OutputGain_ID", this);
+	audioTree.addParameterListener("ToneControlle_ID", this);
+	oversampling.reset(new dsp::Oversampling<float>(2, 2, dsp::Oversampling<float>::filterHalfBandPolyphaseIIR, false));
 
-    _input = 1.0;
-    _output = 1.0;
-    _tone = 10000.0;
-    _mix = 50.0;
+	inputGainValue = 1.0;
+	outputGainValue = 1.0;
+	toneControlleValue = 10000;
 
-
-    //KEEP WORKING HERE YOU HAVE MORE TO DO HERE, AND MOVE DISTORION CLASS INTO PLUGINPROCESSOR
+	distortionType = 1;
+	checkFilter = 1;
 }
 
 TascloneAudioProcessor::~TascloneAudioProcessor()
 {
-    _treeState.removeParameterListener(inID, this);
-    _treeState.removeParameterListener(outID, this);
-    _treeState.removeParameterListener(toneID, this);
-    _treeState.removeParameterListener(mixID, this);
-    oversampling.reset();
+	oversampling.reset();
 }
-
-/*
-juce::AudioProcessorValueTreeState::ParameterLayout TascloneAudioProcessor::createParameterLayout() {
-
-    std::vector <std::unique_ptr<juce::RangedAudioParameter>> params;
-
-    auto inputParam = std::make_unique<juce::AudioParameterFloat>(inID, inName, juce::NormalisableRange<float>(0.0f, 48.0f, 0.1f), 10.0f);
-    auto outputParam = std::make_unique<juce::AudioParameterFloat>(outID, outName, juce::NormalisableRange<float>(-48.0f, 10.0f, 0.1f), 0.0f);
-    auto toneParam = std::make_unique<juce::AudioParameterFloat>(toneID, toneName, juce::NormalisableRange<float>(20.0f, 20000.0f, 6.0f), 10000.0f);
-    auto mixParam = std::make_unique<juce::AudioParameterFloat>(mixID, mixName, juce::NormalisableRange<float>(0.0f, 1.0f, 0.1f), 1.0f);
-
-    params.push_back(std::move(inputParam));
-    params.push_back(std::move(outputParam));
-    params.push_back(std::move(toneParam));
-    params.push_back(std::move(mixParam));
-
-    return { params.begin(), params.end() };
-}
-
-
-void TascloneAudioProcessor::parameterChanged(const juce::String& parameterID, float newValue) {
-
-    updateParameters();
-}
-
-void TascloneAudioProcessor::updateParameters() {
-
-    _distortionModule.setInput(_treeState.getRawParameterValue(inID)->load());
-    _distortionModule.setOutput(_treeState.getRawParameterValue(outID)->load());
-    _distortionModule.setTone(_treeState.getRawParameterValue(toneID)->load());
-    _distortionModule.setMix(_treeState.getRawParameterValue(mixID)->load());
-}
-*/
 
 //==============================================================================
-const juce::String TascloneAudioProcessor::getName() const
+const String TascloneAudioProcessor::getName() const
 {
-    return JucePlugin_Name;
+	return JucePlugin_Name;
 }
 
 bool TascloneAudioProcessor::acceptsMidi() const
 {
-   #if JucePlugin_WantsMidiInput
-    return true;
-   #else
-    return false;
-   #endif
+#if JucePlugin_WantsMidiInput
+	return true;
+#else
+	return false;
+#endif
 }
 
 bool TascloneAudioProcessor::producesMidi() const
 {
-   #if JucePlugin_ProducesMidiOutput
-    return true;
-   #else
-    return false;
-   #endif
+#if JucePlugin_ProducesMidiOutput
+	return true;
+#else
+	return false;
+#endif
 }
 
 bool TascloneAudioProcessor::isMidiEffect() const
 {
-   #if JucePlugin_IsMidiEffect
-    return true;
-   #else
-    return false;
-   #endif
+#if JucePlugin_IsMidiEffect
+	return true;
+#else
+	return false;
+#endif
 }
 
 double TascloneAudioProcessor::getTailLengthSeconds() const
 {
-    return 0.0;
+	return 0.0;
 }
 
 int TascloneAudioProcessor::getNumPrograms()
 {
-    return 1;
+	return 1; // NB: some hosts don't cope very well if you tell them there are 0 programs,
+			  // so this should be at least 1, even if you're not really implementing programs.
 }
 
 int TascloneAudioProcessor::getCurrentProgram()
 {
-    return 0;
+	return 0;
 }
 
-void TascloneAudioProcessor::setCurrentProgram (int index)
+void TascloneAudioProcessor::setCurrentProgram(int index)
 {
 }
 
-const juce::String TascloneAudioProcessor::getProgramName (int index)
+const String TascloneAudioProcessor::getProgramName(int index)
 {
-    return {};
+	return {};
 }
 
-void TascloneAudioProcessor::changeProgramName (int index, const juce::String& newName)
+void TascloneAudioProcessor::changeProgramName(int index, const String &newName)
 {
 }
 
 //==============================================================================
-void TascloneAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
+void TascloneAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
 {
-    oversampling->reset();
-    oversampling->initProcessing(static_cast<size_t> (samplesPerBlock));
+	oversampling->reset();
+	oversampling->initProcessing(static_cast<size_t>(samplesPerBlock));
 
-    juce::dsp::ProcessSpec spec;
-    spec.maximumBlockSize = samplesPerBlock*3;
-    spec.sampleRate = sampleRate*4;
-    spec.numChannels = getTotalNumOutputChannels();
+	dsp::ProcessSpec spec;
+	// Sample Rate of the filter must be 4 times because the Oversampling
+	spec.sampleRate = sampleRate * 4;
+	spec.maximumBlockSize = samplesPerBlock * 3;
+	spec.numChannels = getTotalNumOutputChannels();
 
-    _lowPassFilter.prepare(spec);
-    _lowPassFilter.reset();
-
+	lowPassFilter.prepare(spec);
+	lowPassFilter.reset();
 }
 
 void TascloneAudioProcessor::releaseResources()
 {
-    // When playback stops, you can use this as an opportunity to free up any
-    // spare memory, etc.
+	// When playback stops, you can use this as an opportunity to free up any
+	// spare memory, etc.
 }
 
 #ifndef JucePlugin_PreferredChannelConfigurations
-bool TascloneAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
+bool TascloneAudioProcessor::isBusesLayoutSupported(const BusesLayout &layouts) const
 {
-  #if JucePlugin_IsMidiEffect
-    juce::ignoreUnused (layouts);
-    return true;
-  #else
-    // This is the place where you check if the layout is supported.
-    // In this template code we only support mono or stereo.
-    // Some plugin hosts, such as certain GarageBand versions, will only
-    // load plugins that support stereo bus layouts.
-    if (layouts.getMainOutputChannelSet() != juce::AudioChannelSet::mono()
-     && layouts.getMainOutputChannelSet() != juce::AudioChannelSet::stereo())
-        return false;
+#if JucePlugin_IsMidiEffect
+	ignoreUnused(layouts);
+	return true;
+#else
+	// This is the place where you check if the layout is supported.
+	// In this template code we only support mono or stereo.
+	if (layouts.getMainOutputChannelSet() != AudioChannelSet::mono() && layouts.getMainOutputChannelSet() != AudioChannelSet::stereo())
+		return false;
 
-    // This checks if the input layout matches the output layout
-   #if ! JucePlugin_IsSynth
-    if (layouts.getMainOutputChannelSet() != layouts.getMainInputChannelSet())
-        return false;
-   #endif
+		// This checks if the input layout matches the output layout
+#if !JucePlugin_IsSynth
+	if (layouts.getMainOutputChannelSet() != layouts.getMainInputChannelSet())
+		return false;
+#endif
 
-    return true;
-  #endif
+	return true;
+#endif
 }
 #endif
 
-
-
-
-
-
-
-void TascloneAudioProcessor::parameterChanged(const juce::String& parameterID, float val) {
-    if (parameterID == "inID") {
-        _input = pow(10, val / 20);
-    }
-    else if (parameterID == "outID") {
-        _output = pow(10, val / 20);
-    }
-    else if (parameterID == "toneID") {
-        _tone = val;
-    }
-    else if (parameterID == "mixID") {
-        _mix = val;
-    }
-}
-
-
-void TascloneAudioProcessor::updateFilter() {
-    float frequencyVal = 44100 * 4;
-    *_lowPassFilter.state = *juce::dsp::IIR::Coefficients<float>::makeLowPass(frequencyVal, _tone);
-}
-
-
-void TascloneAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
+void TascloneAudioProcessor::parameterChanged(const String &parameterID, float newValue)
 {
-    juce::ScopedNoDenormals noDenormals;
-    auto totalNumInputChannels  = getTotalNumInputChannels();
-    auto totalNumOutputChannels = getTotalNumOutputChannels();
+	// Parameters update  when sliders moved
+	if (parameterID == "InputGain_ID")
+	{
+		// in db
+		inputGainValue = pow(10, newValue / 20);
+		// inputGainValue = newValue;
+	}
+	else if (parameterID == "OutputGain_ID")
+	{
+		// in db
+		outputGainValue = pow(10, newValue / 20);
+	}
+	else if (parameterID == "ToneControlle_ID")
+	{
+		toneControlleValue = newValue;
+	}
+}
 
-    // In case we have more outputs than inputs, this code clears any output
-    // channels that didn't contain input data, (because these aren't
-    // guaranteed to be empty - they may contain garbage).
-    // This is here to avoid people getting screaming feedback
-    // when they first compile a plugin, but obviously you don't need to keep
-    // this code if your algorithm always overwrites all the output channels.
-    for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
-        buffer.clear (i, 0, buffer.getNumSamples());
+void TascloneAudioProcessor::updateFilter()
+{
+	float frequency = 44100 * 4;
+	*lowPassFilter.state = *dsp::IIR::Coefficients<float>::makeLowPass(frequency, toneControlleValue);
+}
 
+void TascloneAudioProcessor::processBlock(AudioBuffer<float> &buffer, MidiBuffer &midiMessages)
+{
+	ScopedNoDenormals noDenormals;
+	auto totalNumInputChannels = getTotalNumInputChannels();
+	auto totalNumOutputChannels = getTotalNumOutputChannels();
 
-    //juce::dsp::AudioBlock<float> block {buffer};
-    juce::dsp::AudioBlock<float> blockInput(buffer);
-    juce::dsp::AudioBlock<float> blockOutput = oversampling->processSamplesUp(blockInput);
+	for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
+		buffer.clear(i, 0, buffer.getNumSamples());
 
-    for (int channel = 0; channel < blockOutput.getNumChannels(); channel++) {
-        for (int sample = 0; sample < blockOutput.getNumSamples(); sample++) {
+	dsp::AudioBlock<float> blockInput(buffer);
+	dsp::AudioBlock<float> blockOutput = oversampling->processSamplesUp(blockInput);
 
-            float signalIN = blockOutput.getSample(channel, sample);
+	// lowPassFilter (condition used to check if apply the filter before or after the distortion
+	if (checkFilter == 0)
+	{
+		updateFilter();
+		lowPassFilter.process(dsp::ProcessContextReplacing<float>(blockOutput));
+	}
 
-            signalIN *= _input;
+	for (int channel = 0; channel < blockOutput.getNumChannels(); channel++)
+	{
+		for (int sample = 0; sample < blockOutput.getNumSamples(); sample++)
+		{
+			// Take the sample from the Audio Block
+			float in = blockOutput.getSample(channel, sample);
 
-            float signalOUT;
+			// Input Gain (Not for Full wave and Half wave rectifier)
+			if (distortionType == 1 || distortionType == 2 || distortionType == 3)
+			{
+				in *= inputGainValue;
+			}
 
-            //soft clip 
-            if (signalIN > 1.0f) {
-                signalOUT = log(-0.2f * signalIN + 2.85f);
-            }
-            else if (signalIN < 1.0f) {
-                signalOUT = -log(0.2f * signalIN + 2.85f);
-            }
-            else {
-                signalOUT = signalIN * pow(2.05f - abs((3.5f * signalIN) / 2 - 0.8f), 0.8f);
-            }
+			// Distortion Type
+			float out;
+			if (distortionType == 1)
+			{
+				// Simple hard clipping
+				float threshold = 1.0f;
+				if (in > threshold)
+					out = threshold;
+				else if (in < -threshold)
+					out = -threshold;
+				else
+					out = in;
+			}
+			else if (distortionType == 2)
+			{
+				// Soft clipping based on quadratic function
+				float threshold1 = 1.0f / 3.0f;
+				float threshold2 = 2.0f / 3.0f;
+				if (in > threshold2)
+					out = 1.0f;
+				else if (in > threshold1)
+					out = (3.0f - (2.0f - 3.0f * in) *
+									  (2.0f - 3.0f * in)) /
+						  3.0f;
+				else if (in < -threshold2)
+					out = -1.0f;
+				else if (in < -threshold1)
+					out = -(3.0f - (2.0f + 3.0f * in) *
+									   (2.0f + 3.0f * in)) /
+						  3.0f;
+				else
+					out = 2.0f * in;
+			}
+			else if (distortionType == 3)
+			{
+				// Soft clipping based on exponential function
+				if (in > 0)
+					out = 1.0f - expf(-in);
+				else
+					out = -1.0f + expf(in);
+			}
+			else if (distortionType == 4)
+			{
+				// Full-wave rectifier (absolute value)
+				out = fabsf(in);
+			}
+			else if (distortionType == 5)
+			{
+				// Half-wave rectifier
+				if (in > 0)
+					out = in;
+				else
+					out = 0;
+			}
 
-            signalOUT *= (1 / (log(_input + 1) + 1));
+			// match output with input
+			if (distortionType == 1 || distortionType == 2 || distortionType == 3)
+			{
+				out *= (1 / (log(inputGainValue + 1) + 1));
+			}
 
-            outputSmoothed = outputSmoothed - 0.004 * (outputSmoothed - _output);
-            signalOUT *= outputSmoothed;
+			// Allow the user to modify the output level (smoothing)
+			parameterOutputGainSmoothed = parameterOutputGainSmoothed - 0.004 * (parameterOutputGainSmoothed - outputGainValue);
+			out *= parameterOutputGainSmoothed;
 
-            blockOutput.setSample(channel, sample, signalOUT);
+			// Set the new sample in the audio block
+			blockOutput.setSample(channel, sample, out);
+		}
+	}
 
-        }
-    }
+	// lowPassFilter (condition used to check if apply the filter before or after the distortion
+	if (checkFilter == 1)
+	{
+		updateFilter();
+		lowPassFilter.process(dsp::ProcessContextReplacing<float>(blockOutput));
+	}
 
-    updateFilter(); 
-    _lowPassFilter.process(juce::dsp::ProcessContextReplacing<float>(blockOutput));
-
-    oversampling->processSamplesDown(blockInput);
-
-    //_distortionModule.process(juce::dsp::ProcessContextReplacing<float>(block));
+	// DownSampling
+	oversampling->processSamplesDown(blockInput);
 }
 
 //==============================================================================
 bool TascloneAudioProcessor::hasEditor() const
 {
-    return true; // (change this to false if you choose to not supply an editor)
+	return true; // (change this to false if you choose to not supply an editor)
 }
 
-juce::AudioProcessorEditor* TascloneAudioProcessor::createEditor()
+AudioProcessorEditor *TascloneAudioProcessor::createEditor()
 {
-    //return new TascloneAudioProcessorEditor (*this);
-    return new juce::GenericAudioProcessorEditor(*this);
+	return new TascloneAudioProcessorEditor(*this, audioTree);
 }
 
 //==============================================================================
-void TascloneAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
+void TascloneAudioProcessor::getStateInformation(MemoryBlock &destData)
 {
-    // You should use this method to store your parameters in the memory block.
-    // You could do that either as raw data, or use the XML or ValueTree classes
-    // as intermediaries to make it easy to save and load complex data.
+	// You should use this method to store your parameters in the memory block.
+	// You could do that either as raw data, or use the XML or ValueTree classes
+	// as intermediaries to make it easy to save and load complex data.
 }
 
-void TascloneAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
+void TascloneAudioProcessor::setStateInformation(const void *data, int sizeInBytes)
 {
-    // You should use this method to restore your parameters from this memory block,
-    // whose contents will have been created by the getStateInformation() call.
+	// You should use this method to restore your parameters from this memory block,
+	// whose contents will have been created by the getStateInformation() call.
 }
-
-
 
 //==============================================================================
 // This creates new instances of the plugin..
-juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
+AudioProcessor *JUCE_CALLTYPE createPluginFilter()
 {
-    return new TascloneAudioProcessor();
+	return new TascloneAudioProcessor();
 }

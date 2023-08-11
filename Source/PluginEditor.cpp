@@ -1,7 +1,9 @@
 /*
   ==============================================================================
 
-    This file contains the basic framework code for a JUCE plugin editor.
+	This file was auto-generated!
+
+	It contains the basic framework code for a JUCE plugin editor.
 
   ==============================================================================
 */
@@ -10,44 +12,63 @@
 #include "PluginEditor.h"
 
 //==============================================================================
-TascloneAudioProcessorEditor::TascloneAudioProcessorEditor(TascloneAudioProcessor& p, juce::AudioProcessorValueTreeState& ts)
-    : AudioProcessorEditor(&p), audioProcessor(p), _treeState(ts)
-
+TascloneAudioProcessorEditor::TascloneAudioProcessorEditor(TascloneAudioProcessor &p, AudioProcessorValueTreeState &vts)
+	: AudioProcessorEditor(&p), processor(p), audioTree(vts)
 {
-    // Make sure that before the constructor has finished, you've set the
-    // editor's size to whatever you need it to be.
-    setSize (500, 300);
+	setSize(500, 200);
 
-    inputGain.setSliderStyle(juce::Slider::SliderStyle::Rotary);
-    inputGain.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
-    inputGain.addListener(this);
-    inputGain.setTextBoxStyle(juce::Slider::NoTextBox, true, 0, 0);
-    addAndMakeVisible(inputGain);
-    sliderAttachmentInput.reset(new juce::AudioProcessorValueTreeState::SliderAttachment(_treeState, "inID", inputGain));
-    inputGain.setLookAndFeel(&knobLookAndFeel);
-    toneLabel.setText("Tone", juce::dontSendNotification);
-    toneLabel.setFont(juce::Font("Multicolore", 12, 1));
-    toneLabel.setColour(juce::Label::textColourId, juce::Colour(242, 242, 242));
-    addAndMakeVisible(toneLabel);
+	// Input Gain
+	inputGain.setSliderStyle(Slider::SliderStyle::Rotary);
+	inputGain.addListener(this);
+	inputGain.setTextBoxStyle(Slider::TextEntryBoxPosition::TextBoxBelow, true, 50, 25);
+	addAndMakeVisible(inputGain);
+	sliderAttachInputGain.reset(new AudioProcessorValueTreeState::SliderAttachment(audioTree, "InputGain_ID", inputGain));
+	// inputGainLabel.setText("Input Gain", dontSendNotification);
+	// addAndMakeVisible(inputGainLabel);
+
+	// Output Gain
+	outputGain.setSliderStyle(Slider::SliderStyle::Rotary);
+	outputGain.setTextBoxStyle(Slider::TextEntryBoxPosition::TextBoxBelow, true, 50, 25);
+	outputGain.addListener(this);
+	addAndMakeVisible(outputGain);
+	sliderAttachOutputGain.reset(new AudioProcessorValueTreeState::SliderAttachment(audioTree, "OutputGain_ID", outputGain));
+	// outputGainLabel.setText("Volume", dontSendNotification);
+	// addAndMakeVisible(outputGainLabel);
+
+	// Tone Controlle
+	toneControlle.setSliderStyle(Slider::SliderStyle::Rotary);
+	toneControlle.addListener(this);
+	toneControlle.setTextBoxStyle(Slider::TextEntryBoxPosition::TextBoxBelow, true, 50, 25);
+	addAndMakeVisible(toneControlle);
+	sliderAttachToneControlle.reset(new AudioProcessorValueTreeState::SliderAttachment(audioTree, "ToneControlle_ID", toneControlle));
+	// toneLabel.setText("Tone Control", dontSendNotification);
+	// addAndMakeVisible(toneLabel);
 }
 
 TascloneAudioProcessorEditor::~TascloneAudioProcessorEditor()
 {
+	sliderAttachInputGain.reset();
+	sliderAttachOutputGain.reset();
+	sliderAttachToneControlle.reset();
 }
 
 //==============================================================================
-void TascloneAudioProcessorEditor::paint (juce::Graphics& g)
+void TascloneAudioProcessorEditor::paint(Graphics &g)
 {
-    // (Our component is opaque, so we must completely fill the background with a solid colour)
-    g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));
-
-    g.setColour (juce::Colours::white);
-    g.setFont (15.0f);
-    g.drawFittedText ("Hello World!", getLocalBounds(), juce::Justification::centred, 1);
 }
 
 void TascloneAudioProcessorEditor::resized()
 {
-    // This is generally where you'll want to lay out the positions of any
-    // subcomponents in your editor..
+	const auto heightFromTop = 25;
+
+	inputGain.setBounds(25, heightFromTop, 150, 150);
+	outputGain.setBounds(200, heightFromTop, 150, 150);
+	toneControlle.setBounds(375, heightFromTop, 150, 150);
+
+	// also set bounds of labels if added back
+}
+
+void TascloneAudioProcessorEditor::sliderValueChanged(Slider *slider)
+{
+	std::cout << "Slider " << slider->getName() << " value changed to " << slider->getValue() << '\n';
 }
