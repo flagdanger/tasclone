@@ -10,7 +10,7 @@
 
 #include <JuceHeader.h>
 //#include "DSP/distortion.h"
-#include "Params/parameters.h"
+//#include "Params/parameters.h"
 
 //==============================================================================
 /**
